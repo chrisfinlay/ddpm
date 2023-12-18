@@ -35,7 +35,7 @@ def generate_images(
     device: str = "cpu",
 ) -> torch.Tensor:
     x = (
-        torch.randn(n_imgs, *img_shape) * sigmas[0]
+        torch.randn(n_imgs, *img_shape, device=device) * sigmas[0]
     )  # Initialize with pure gaussian noise ~ N(0, sigmas[0])
 
     if include_steps:
@@ -44,7 +44,7 @@ def generate_images(
 
     for i, sigma in enumerate(sigmas):
         with torch.no_grad():
-            x_denoised = D(x, sigma)
+            x_denoised = D(x, torch.Tensor([sigma]).to(device))
             # Where D(x, sigma) = cskip(sigma) * x + cout(sigma) * F(cin(sigma) * x, cnoise(sigma))
             # and F(.,.) is your neural network
 
@@ -55,9 +55,11 @@ def generate_images(
 
         if include_steps:
             denoised_steps[i + 1] = x
-            return denoised_steps
-        else:
-            return x
+
+    if include_steps:
+        return denoised_steps
+    else:
+        return x
 
 
 def noising_process(imgs: torch.Tensor, sigmas: torch.Tensor):
