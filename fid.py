@@ -1,5 +1,6 @@
 from pytorch_fid.inception import InceptionV3
 import torch
+from torch import Tensor
 
 gpu = torch.cuda.is_available()
 device = torch.device("cuda:0" if gpu else "cpu")
@@ -7,12 +8,12 @@ device = torch.device("cuda:0" if gpu else "cpu")
 
 # wrapper class as feature_extractor taken from https://pytorch.org/ignite/generated/ignite.metrics.FID.html
 class WrapperInceptionV3(torch.nn.Module):
-    def __init__(self, fid_incv3):
+    def __init__(self, fid_incv3: torch.nn.Module):
         super().__init__()
         self.fid_incv3 = fid_incv3
 
     @torch.no_grad()
-    def forward(self, x):
+    def forward(self, x: Tensor):
         y = self.fid_incv3(x)
         y = y[0]
         y = y[:, :, 0, 0]
@@ -20,7 +21,7 @@ class WrapperInceptionV3(torch.nn.Module):
 
 
 # pure pytorch implementation taken from
-def calculate_frechet_distance(x, y):
+def calculate_frechet_distance(x: Tensor, y: Tensor) -> Tensor:
     sigma_x, sigma_y = torch.cov(x.T), torch.cov(y.T)
     a = (x.mean(axis=0) - y.mean(axis=0)).square().sum()
     b = sigma_x.trace() + sigma_y.trace()
@@ -28,7 +29,7 @@ def calculate_frechet_distance(x, y):
     return a + b - 2 * c
 
 
-def calculate_fid(y_gen, y_data):
+def calculate_fid(y_gen: Tensor, y_data: Tensor) -> Tensor:
     if y_gen.shape[1] != 3:
         y_gen = y_gen * torch.ones(1, 3, 1, 1, device=device)
 
