@@ -1,6 +1,9 @@
 from pytorch_fid.inception import InceptionV3
 import torch
 from torch import Tensor
+from typing import Callable
+from utils import generate_images
+from data import load_dataset_and_make_dataloaders
 
 gpu = torch.cuda.is_available()
 device = torch.device("cuda:0" if gpu else "cpu")
@@ -20,7 +23,7 @@ class WrapperInceptionV3(torch.nn.Module):
         return y
 
 
-# pure pytorch implementation taken from
+# pure pytorch implementation taken from https://www.reddit.com/r/MachineLearning/comments/12hv2u6/d_a_better_way_to_compute_the_fr%C3%A9chet_inception/
 def calculate_frechet_distance(x: Tensor, y: Tensor) -> Tensor:
     sigma_x, sigma_y = torch.cov(x.T), torch.cov(y.T)
     a = (x.mean(axis=0) - y.mean(axis=0)).square().sum()
@@ -47,3 +50,23 @@ def calculate_fid(y_gen: Tensor, y_data: Tensor) -> Tensor:
     y_data_latent = wrapper_model(y_data)
 
     return calculate_frechet_distance(y_gen_latent, y_data_latent)
+
+
+def get_fid(n_samples: int, sigmas: Tensor, D: Callable, device: str = "cpu") -> Tensor:
+    dl, info = load_dataset_and_make_dataloaders(
+        dataset_name="FashionMNIST",
+        root_dir="data",  # choose the directory to store the data
+        batch_size=n_samples,
+        num_workers=0,  # you can use more workers if you see the GPU is waiting for the batches
+        pin_memory=gpu,  # use pin memory if you're planning to move the data to GPU
+    )
+
+    for y, label in dl.train:
+        y_data = y
+        break
+
+    y_gen = generate_images(
+        n_samples, y_data.shape[1:], sigmas, D, include_steps=False, device=device
+    )
+
+    return calculate_fid(y_gen, y_data.to(device))

@@ -85,6 +85,44 @@ class Model2(nn.Module):
         return self.conv_out(x)
 
 
+class Model22(nn.Module):
+    def __init__(
+        self,
+        image_size: int,
+        image_channels: int,
+        nb_channels: int,
+        num_blocks: int,
+        cond_channels: int,
+    ) -> None:
+        super().__init__()
+        self.image_size = image_size
+        self.noise_emb = NoiseEmbedding1(cond_channels)
+        self.noise_fc1 = nn.Linear(cond_channels, image_size**2)
+        self.conv_in = nn.Conv2d(
+            image_channels + 1, nb_channels, kernel_size=3, padding=1
+        )
+        self.blocks = nn.ModuleList(
+            [ResidualBlock1(nb_channels) for _ in range(num_blocks)]
+        )
+        self.conv_out = nn.Conv2d(nb_channels, image_channels, kernel_size=3, padding=1)
+
+    def forward(self, noisy_input: torch.Tensor, c_noise: torch.Tensor) -> torch.Tensor:
+        cond = self.noise_fc1(self.noise_emb(c_noise))  # TODO: not used yet
+        x = self.conv_in(
+            torch.concat(
+                [
+                    noisy_input,
+                    cond.reshape(-1, 1, self.image_size, self.image_size)
+                    * torch.ones(*noisy_input.shape, device=noisy_input.device),
+                ],
+                axis=1,
+            )
+        )
+        for block in self.blocks:
+            x = block(x)
+        return self.conv_out(x)
+
+
 class Model3(nn.Module):
     def __init__(
         self,
