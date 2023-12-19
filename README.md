@@ -21,4 +21,4 @@ This repository holds the code for a DDPM project to generate images from the Fa
 
  # Presentation link
 
- ![Google Slides](https://docs.google.com/presentation/d/1-juQUJXn4XlDZv04WkPbatqQF6KKs6PMNQKKsnmIlFs/edit?usp=sharing)
+ [Google Slides](https://docs.google.com/presentation/d/1-juQUJXn4XlDZv04WkPbatqQF6KKs6PMNQKKsnmIlFs/edit?usp=sharing)
