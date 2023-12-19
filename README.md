@@ -12,7 +12,7 @@ This repository holds the code for a DDPM project to generate images from the Fa
 
  # Noising (Forward) Process
 
- ![Noising Process](https://github.com/chrisfinlay/ddpm/blob/main/images/noising.png?raw=true)
+ ![Noising Process](https://github.com/chrisfinlay/ddpm/blob/main/images/noising_process.png?raw=true)
 
 
  # Denoising (Reverse) Process
