@@ -17,4 +17,4 @@ This repository holds the code for a DDPM project to generate images from the Fa
 
  # Denoising (Reverse) Process
 
- ![Denoising Process](https://github.com/chrisfinlay/ddpm/blob/main/images/denoising_process_trained_model3.png?raw=true)
+ ![Denoising Process](https://github.com/chrisfinlay/ddpm/blob/main/images/denoising_process_trained_unet1.png?raw=true)
