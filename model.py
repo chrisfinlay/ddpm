@@ -83,7 +83,7 @@ class Model2(nn.Module):
         cond = self.noise_emb(c_noise)  # TODO: not used yet
         x = self.conv_in(noisy_input)
         for block in self.blocks:
-            x = block(x) + F.relu(self.noise_fc1(cond)).unsqueeze(2).unsqueeze(2)
+            x = block(x) + F.relu(self.noise_fc1(cond)).unsqueeze(2).unsqueeze(3)
         return self.conv_out(x)
 
 
