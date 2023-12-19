@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Model(nn.Module):
+class Model1(nn.Module):
     def __init__(
         self,
         image_channels: int,
@@ -12,10 +12,10 @@ class Model(nn.Module):
         cond_channels: int,
     ) -> None:
         super().__init__()
-        self.noise_emb = NoiseEmbedding(cond_channels)
+        self.noise_emb = NoiseEmbedding1(cond_channels)
         self.conv_in = nn.Conv2d(image_channels, nb_channels, kernel_size=3, padding=1)
         self.blocks = nn.ModuleList(
-            [ResidualBlock(nb_channels) for _ in range(num_blocks)]
+            [ResidualBlock1(nb_channels) for _ in range(num_blocks)]
         )
         self.conv_out = nn.Conv2d(nb_channels, image_channels, kernel_size=3, padding=1)
 
@@ -27,7 +27,7 @@ class Model(nn.Module):
         return self.conv_out(x)
 
 
-class NoiseEmbedding(nn.Module):
+class NoiseEmbedding1(nn.Module):
     def __init__(self, cond_channels: int) -> None:
         super().__init__()
         assert cond_channels % 2 == 0
@@ -39,7 +39,7 @@ class NoiseEmbedding(nn.Module):
         return torch.cat([f.cos(), f.sin()], dim=-1)
 
 
-class ResidualBlock(nn.Module):
+class ResidualBlock1(nn.Module):
     def __init__(self, nb_channels: int) -> None:
         super().__init__()
         self.norm1 = nn.BatchNorm2d(nb_channels)
@@ -69,11 +69,11 @@ class Model2(nn.Module):
         cond_channels: int,
     ) -> None:
         super().__init__()
-        self.noise_emb = NoiseEmbedding(cond_channels)
+        self.noise_emb = NoiseEmbedding1(cond_channels)
         self.noise_fc1 = nn.Linear(cond_channels, nb_channels)
         self.conv_in = nn.Conv2d(image_channels, nb_channels, kernel_size=3, padding=1)
         self.blocks = nn.ModuleList(
-            [ResidualBlock(nb_channels) for _ in range(num_blocks)]
+            [ResidualBlock1(nb_channels) for _ in range(num_blocks)]
         )
         self.conv_out = nn.Conv2d(nb_channels, image_channels, kernel_size=3, padding=1)
 
@@ -94,7 +94,7 @@ class Model3(nn.Module):
         cond_channels: int,
     ) -> None:
         super().__init__()
-        self.noise_emb = NoiseEmbedding(cond_channels)
+        self.noise_emb = NoiseEmbedding1(cond_channels)
         self.noise_fc1 = nn.Linear(cond_channels, 2 * nb_channels)
         self.conv_in = nn.Conv2d(image_channels, nb_channels, kernel_size=3, padding=1)
         self.blocks = nn.ModuleList(

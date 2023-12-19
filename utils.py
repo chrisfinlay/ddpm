@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
+from data import load_dataset_and_make_dataloaders
 import torch
+from tqdm import tqdm
 
 
 def sample_sigma(
@@ -90,3 +92,90 @@ def plot_imgs(
             ax[i, j].set_yticks([])
 
     plt.savefig(f"images/{plot_name}.png")
+
+
+def denoiser(F, c_in, c_out, c_skip, c_noise):
+    def D(x, sigma):
+        return c_skip(sigma[:, None, None, None]) * x + c_out(
+            sigma[:, None, None, None]
+        ) * F(c_in(sigma[:, None, None, None]) * x, c_noise(sigma))
+
+    return D
+
+
+def train_ddpm(
+    model,
+    c_funcs,
+    N,
+    nb_epochs,
+    lr,
+    batch_size,
+    optim="Adam",
+    dataset_name="FashionMNIST",
+    root_dir="data",
+):
+    gpu = torch.cuda.is_available()
+    device = torch.device("cuda:0" if gpu else "cpu")
+
+    F = model.to(device).forward
+    c_in, c_out, c_skip, c_noise = c_funcs
+
+    def D(x, sigma):
+        return c_skip(sigma[:, None, None, None]) * x + c_out(
+            sigma[:, None, None, None]
+        ) * F(c_in(sigma[:, None, None, None]) * x, c_noise(sigma))
+
+    criterion = torch.nn.MSELoss().to(device)
+    if optim == "Adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr)
+    elif optim == "SGD":
+        optimizer = torch.optim.SGD(model.parameters(), lr)
+    else:
+        print("Choose 'optim' from 'Adam' or 'SGD'. ")
+        return D, [], []
+
+    train_losses = []
+    val_losses = []
+
+    dl, info = load_dataset_and_make_dataloaders(
+        dataset_name=dataset_name,
+        root_dir=root_dir,  # choose the directory to store the data
+        batch_size=batch_size,
+        num_workers=0,  # you can use more workers if you see the GPU is waiting for the batches
+        pin_memory=gpu,  # use pin memory if you're planning to move the data to GPU
+    )
+
+    for _ in tqdm(range(nb_epochs)):
+        train_loss = []
+        for y, _ in dl.train:
+            sigma = sample_sigma(y.shape[0])[:, None, None, None].to(device)
+            y = y.to(device)
+            x = N(y, sigma)
+
+            output = F(c_in(sigma) * x, c_noise(sigma[:, 0, 0, 0]))
+            target = (y - c_skip(sigma) * x) / c_out(sigma)
+
+            loss = criterion(output, target)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            train_loss.append(loss.item())
+
+        train_losses.append(torch.Tensor(train_loss).mean())
+
+        val_loss = []
+        for y, _ in dl.valid:
+            sigma = sample_sigma(y.shape[0])[:, None, None, None].to(device)
+            y = y.to(device)
+            x = N(y, sigma)
+
+            output = F(c_in(sigma) * x, c_noise(sigma[:, 0, 0, 0]))
+            target = (y - c_skip(sigma) * x) / c_out(sigma)
+
+            val_loss.append(criterion(output, target).item())
+
+        val_losses.append(torch.Tensor(val_loss).mean())
+
+    return D, train_losses, val_losses
